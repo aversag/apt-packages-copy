@@ -1,0 +1,67 @@
+#!/bin/bash
+#
+# Copyright (C) 2016 Guillaume Aversa <guillaume.aversa@gmail.com>
+#
+# This program is free software: you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free Software
+# Foundation, either version 3 of the License, or (at your option) any later
+# version.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along with
+# this program. If not, see <http://www.gnu.org/licenses/>.
+#
+
+set -e -o pipefail -o nounset
+
+usage()
+{
+        echo "Illegal number of parameters"
+    echo "Usage: $0 hostname_target [user]" >&2
+}
+
+if [ "$#" -ne 1 ] && [ "$#" -ne 2 ] ; then
+    usage
+        exit 1
+fi
+
+HOST=$1
+
+if [ "$#" -eq 2 ] ; then
+    USER=$2
+else
+        # default user : root
+        USER=root
+fi
+
+# check debian version
+TARGET_DEB_VERSION=$(ssh $USER@$HOST "cat /etc/debian_version")
+LOCALHOST_DEB_VERSION=$(cat /etc/debian_version)
+
+if [ "$TARGET_DEB_VERSION" != "$LOCALHOST_DEB_VERSION" ] ; then
+        echo "Debian versions differs $TARGET_DEB_VERSION != $LOCALHOST_DEB_VERSION" >&2
+        exit 1
+fi
+
+# create sources list and package on remote host
+ssh $USER@$HOST "dpkg --get-selections > ~/Package.list"
+ssh $USER@$HOST "cp -R /etc/apt/sources.list* ~/"
+ssh $USER@$HOST "apt-key exportall > ~/Repo.keys"
+
+# applying the list on localhost
+scp -r $USER@$HOST:~/*list* ~/
+scp $USER@$HOST:~/Repo.keys ~/
+
+# applying the list on localhost
+apt-key add ~/Repo.keys
+cp -R ~/sources.list* /etc/apt/
+apt-get update
+apt-get install dselect
+dselect update
+dpkg --set-selections < ~/Package.list
+apt-get dselect-upgrade -y
+
+
