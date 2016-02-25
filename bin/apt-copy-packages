@@ -19,22 +19,22 @@ set -e -o pipefail -o nounset
 
 usage()
 {
-        echo "Illegal number of parameters"
+    echo "Illegal number of parameters"
     echo "Usage: $0 hostname_target [user]" >&2
 }
 
 if [ "$#" -ne 1 ] && [ "$#" -ne 2 ] ; then
     usage
-        exit 1
+    exit 1
 fi
 
+# apply params
 HOST=$1
-
 if [ "$#" -eq 2 ] ; then
     USER=$2
+# default user : root
 else
-        # default user : root
-        USER=root
+    USER=root
 fi
 
 # check debian version
@@ -42,8 +42,8 @@ TARGET_DEB_VERSION=$(ssh $USER@$HOST "cat /etc/debian_version")
 LOCALHOST_DEB_VERSION=$(cat /etc/debian_version)
 
 if [ "$TARGET_DEB_VERSION" != "$LOCALHOST_DEB_VERSION" ] ; then
-        echo "Debian versions differs $TARGET_DEB_VERSION != $LOCALHOST_DEB_VERSION" >&2
-        exit 1
+    echo "Debian versions differs $TARGET_DEB_VERSION != $LOCALHOST_DEB_VERSION" >&2
+    exit 1
 fi
 
 # create sources list and package on remote host
@@ -63,5 +63,4 @@ apt-get install dselect
 dselect update
 dpkg --set-selections < ~/Package.list
 apt-get dselect-upgrade -y
-
 
