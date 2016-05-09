@@ -46,10 +46,13 @@ if [ "$TARGET_DEB_VERSION" != "$LOCALHOST_DEB_VERSION" ] ; then
     exit 1
 fi
 
+# install dselect if needed
+sudo apt-get install -y dselect
+
 # create sources list and package on remote host
-ssh $USER@$HOST "dpkg --get-selections > ~/Package.list"
-ssh $USER@$HOST "cp -R /etc/apt/sources.list* ~/"
-ssh $USER@$HOST "apt-key exportall > ~/Repo.keys"
+ssh $USER@$HOST "sudo dpkg --get-selections > ~/Package.list"
+ssh $USER@$HOST "sudo cp -R /etc/apt/sources.list* ~/"
+ssh $USER@$HOST "sudo apt-key exportall > ~/Repo.keys"
 
 # applying the list on localhost
 scp -r $USER@$HOST:~/*list* ~/
